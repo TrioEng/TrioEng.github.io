@@ -19,12 +19,12 @@ body, html {
 }
 
 /* Images used */
-.img1 { background-image: url("images/2834 Winnebago Dr-1"); }
-.img2 { background-image: url("images/2834 Winnebago Dr-2"); }
-.img3 { background-image: url("images/2834 Winnebago Dr-3"); }
-.img4 { background-image: url("images/2834 Winnebago Dr-4"); }
-.img5 { background-image: url("images/2834 Winnebago Dr-5"); }
-.img6 { background-image: url("images/2834 Winnebago Dr-6"); }
+.img1 { background-image: url("./images/Lake\ Country\ Village/2834 Winnebago Dr-1.jpg"); }
+.img2 { background-image: url("./images/Lake\ Country\ Village/2834 Winnebago Dr-2.jpg"); }
+.img3 { background-image: url("./images/Lake\ Country\ Village/2834 Winnebago Dr-3.jpg"); }
+.img4 { background-image: url("./images/Lake\ Country\ Village/2834 Winnebago Dr-4.jpg"); }
+.img5 { background-image: url("./images/Lake\ Country\ Village/2834 Winnebago Dr-5.jpg"); }
+.img6 { background-image: url("./images/Lake\ Country\ Village/2834 Winnebago Dr-6.jpg"); }
 
 /* Position text in the middle of the page/image */
 .bg-text {
