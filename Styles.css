@@ -1,0 +1,113 @@
+
+body {
+
+  font-size: 10pt;
+
+  font-family: Raleway, Verdana, Geneva, Arial, Helvetica, sans-serif;
+
+  color: black;
+
+  line-height: 14pt;
+
+  text-align: center;
+
+  padding-left: 5pt;
+
+  padding-right: 5pt;
+
+  padding-top: 5pt;
+
+}
+
+
+h1 {
+
+  font: 30pt Impact, Raleway, Verdana, Geneva, Arial, Helvetica, sans-serif;
+
+  font-weight: bold;
+
+  line-height: 20pt;
+
+}
+
+
+p.subheader {
+
+  font-weight: bold;
+
+  color: #593d87;
+
+}
+
+
+
+
+a {
+
+  text-decoration: none;
+
+}
+
+
+a:link, a:visited {
+
+  font-size: large;
+
+  font-weight: bolder;
+
+  color: #00218d;
+
+}
+
+
+a:hover, a:active {
+
+  color: #FF9933;
+
+}
+
+.center {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  height: auto;
+
+}
+
+.tablecenter {
+  
+    margin-left: auto;
+    margin-right: auto;
+  
+
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+
+div.footer {
+
+  font-size: 9pt;
+
+  font-style: italic;
+
+  line-height: 12pt;
+
+  text-align: center;
+
+  padding-top: 30pt;
+
+}
+
+tr:hover {
+  background-color: coral;
+}
+
+
+table, th, td, .tablecenter {
+  border: 1px solid;
+  padding: 10px;
+}
