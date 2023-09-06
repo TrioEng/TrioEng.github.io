@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+
+      <h1>Trio Engineering - Dream it. Plan it. Build it.</h1>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trio Engineering</title>
+
+    <link rel="stylesheet" type="text/css" href="styles.css"/>
+    
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bitter&family=Calistoga&family=Comfortaa:wght@700&family=Lora&family=Rubik+80s+Fade&display=swap" rel="stylesheet">
+ 
+  </head>
+  <body>
+    <div class="topnav">
+      <a class="active" href="./index.html">Home</a>
+      <a href="./testindex.html">TestIndex</a>
+      <a href="./events.html">Work Events</a>
+      <a href="./contacts.html">Project Contacts</a>
+       <a href="./portfolio.html">Portfolio</a>
+       
+       <div class="dropdown">
+         button class="dropbtn">Dropdown<i class="fa fa-caret-down"></i>
+         </button>
+         
+         <div class="dropdown-content">
+           <a href="./portfolio.html">Portfolio</a>
+           <a href="./events.html">Events</a>
+        </div>
+      </div>
+    </div>
+
+   
+
+
+
+ <main>
+      <h2>Hi there.</h2>
+
+      <p>Here are some of the things you guys accomplished last week. Good job everyone.</p>
+    
+
+     <img  src="./images/highlights.jpg" alt="Highlights" class="center">
+
+    </main>
+
+
+
+
+
+        <!-- Load external JavaScript -->
+        <script src="scripts.js"></script>
+        
+    </body>
+
+</html>
