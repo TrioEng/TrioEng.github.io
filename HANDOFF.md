@@ -46,7 +46,7 @@ The original Excel file (`Project Checklist.xlsx`) is where the task library cam
   - We deliberately do **not** use a "Save as" picker. Chrome/Edge empty an existing file as soon as it's picked in "Save as", which could wipe a coworker's data.
 - The page remembers each project's link in IndexedDB and keeps a backup copy in localStorage.
   - Opened as a local file, it's keyed by the HTML file's path.
-  - Hosted, it's keyed only by the `?project=` value in the link (`PAGE_KEY` in `index.html`), not by the page's path.
+  - Hosted, it's keyed only by the `#project=` value in the link (`PAGE_KEY` in `index.html`), not by the page's path.
   - All GitHub Pages sites on the TrioEng account share one origin (`trioeng.github.io`, including any other TrioEng repo served at `trioeng.github.io/<repo>/`), so they share localStorage and IndexedDB. Keys all start with `pc:`; don't host another checklist-style page on the TrioEng account.
 - **Browser permission behavior we learned:**
   - When opened as a local file, the browser requires one "Reconnect" click per browser session. "Allow on every visit" only removes the permission prompt, not the click. Trying to reconnect automatically on page load (v6) doesn't help.
@@ -62,16 +62,19 @@ The original Excel file (`Project Checklist.xlsx`) is where the task library cam
 
 ## 4. Hosted design
 
-- **Site home page** (no `?project=`): enter a project number to open it, plus a "Recently opened on this computer" list.
-- **Project page:** `…/?project=24-118`. The project number is filled in from the link.
+- **Site home page** (no `#project=`): enter a project number to open it, plus a "Recently opened on this computer" list.
+- **Project page:** `…/#project=24-118`. The project number is filled in from the link.
+  - **Why `#` and not `?`:** the part of a link after `#` never leaves the browser, so GitHub never receives project numbers (its server logs only see `/`). With `?project=` every page load sent the number to GitHub. Only the page itself is downloaded from GitHub; the page makes no other web requests.
+  - Old `?project=` links still work: the page reads the number and rewrites the address to the `#` form without reloading. That first load still sends the number to GitHub, so replace old shortcuts when convenient.
+  - Changing the `#` part of an open page (home page form, recent list, typing a new link) reloads the page, since it's set up for one project per load.
 - **When a project folder is linked, the page writes `Project Checklist.url`** (a Windows internet shortcut) into that folder, pointing to the project's page. It never overwrites an existing shortcut. Team members double-click the shortcut.
 - ••• menu → **Copy link to this project**.
-- **The shortcut stores the full page address** (e.g. `https://trioeng.github.io/?project=24-118`), and the page never overwrites an existing shortcut. **This URL is now locked.** Don't rename the repo, rename `index.html`, move it into a folder, or add a custom domain: every existing shortcut would break and have to be deleted by hand so the page can write a new one. `TrioEng.github.io` is the organization's root Pages site, which is why the address has no repo name in it.
+- **The shortcut stores the full page address** (e.g. `https://trioeng.github.io/#project=24-118`), and the page never overwrites an existing shortcut. **This URL is now locked.** Don't rename the repo, rename `index.html`, move it into a folder, or add a custom domain: every existing shortcut would break and have to be deleted by hand so the page can write a new one. `TrioEng.github.io` is the organization's root Pages site, which is why the address has no repo name in it.
 - **Opened as a local file, the page behaves like the old v5** (one copy of the file per project folder). Local copies don't get updates from the repo.
 - **Project data never goes to GitHub.** GitHub only serves the page; everything is read from and written to the project folders on the user's computer.
 - GitHub Pages sites are **public** unless the organization has GitHub Enterprise. The page code and task list are visible to anyone with the URL; project data is not. The user is aware of this.
 - Benefit: **update once, everyone gets it.** Editing `index.html` in the repo updates every project.
-- The flip side: **every commit to `main` reaches every PM within about a minute.** There's no separate test copy. Test changes first, on a branch merged when ready or on a `beta/index.html` page (`https://trioeng.github.io/beta/`). A beta page on the same site shares project links and saved data with the live page (storage is keyed by `?project=` only). That's fine for testing on real folders, but be aware of it. A beta page also writes a shortcut pointing to the beta URL if the folder doesn't already have one.
+- The flip side: **every commit to `main` reaches every PM within about a minute.** There's no separate test copy. Test changes first, on a branch merged when ready or on a `beta/index.html` page (`https://trioeng.github.io/beta/`). A beta page on the same site shares project links and saved data with the live page (storage is keyed by `#project=` only). That's fine for testing on real folders, but be aware of it. A beta page also writes a shortcut pointing to the beta URL if the folder doesn't already have one.
 - Possible future feature: a **cross-project dashboard** ("what's due this week across all my projects"). The user would grant the site access to the parent Projects folder once, and the page would read every subfolder's `project-checklist.json`. Not requested yet.
 
 ---
@@ -125,7 +128,7 @@ Everything is in one file: HTML, CSS and JavaScript.
 4. Confirm:
    - `project-checklist.json` is created or found, and existing data appears.
    - **`Project Checklist.url` appears in the folder.** Not yet tested; folder access couldn't be tested in the preview.
-   - Double-clicking the shortcut opens the right project, connected, with no yellow bar. The shortcut opens a normal browser tab, not the installed app window; permission should still hold for the site.
+   - Double-clicking the shortcut opens the right project (check the address still ends in `#project=…`; Windows shortcuts should keep the `#` part, but this hasn't been tested), connected, with no yellow bar. The shortcut opens a normal browser tab, not the installed app window; permission should still hold for the site.
 5. Fully restart the browser and reopen via the shortcut. It should still connect with no click.
 6. When available: test two people on two different computers on the same OneDrive project folder.
 
@@ -144,7 +147,7 @@ Everything is in one file: HTML, CSS and JavaScript.
 - **UI:** an in-app browser preview.
   - It can't access real files: there's no File System Access as a local file, so saving and linking were always tested by the user in real Chrome/Edge.
   - A hidden preview window doesn't fire focus/blur events, so those were simulated.
-  - The hosted behavior (home page, `?project=`, recent list) was tested on a temporary local web server (`python -m http.server`).
+  - The hosted behavior (home page, `#project=`, recent list) was tested on a temporary local web server (`python -m http.server`).
 
 ---
 
