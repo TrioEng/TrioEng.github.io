@@ -1,0 +1,1510 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Project Checklist</title>
+<script>
+/* =====================================================================
+   TASK LIBRARY — edit this list to add, remove, or reorder tasks.
+   Categories appear in this order. A task's saved data is matched by
+   its category + name, so renaming a task here disconnects old notes
+   for that task in existing projects (adding/removing is always safe).
+   ===================================================================== */
+const LIBRARY = [
+  { id: 'survey', name: 'Survey & Platting', tasks: [
+    'ALTA/NSPS Survey', 'Boundary Survey', 'Topographic & Location Survey', 'Site Topography',
+    'Plat of Survey', 'Recertification Survey', 'Title Review', 'Legal Descriptions/Exhibits',
+    'Certified Survey Map', 'Preliminary Plat', 'Final Plat', 'Condo Plat', 'Annexation',
+    'Rezoning', 'Diggers Hotline' ] },
+  { id: 'concept', name: 'Concept Planning', tasks: [
+    'Concept Plan', 'Site Plan' ] },
+  { id: 'exhibits', name: 'Exhibits & Approvals', tasks: [
+    'Rezoning', 'PUD', 'Land Use Exhibit', 'Development Agreement', 'Vehicle Turning Exhibit',
+    'Easements', 'Soil Boring' ] },
+  { id: 'prelim', name: 'Preliminary Engineering', tasks: [
+    'Site Plan', 'Existing Site/Demolition Plan', 'Erosion Control Plan', 'Grading & Drainage Plan',
+    'Master Grading & Drainage', 'Utility Plan', 'Road & Storm Sewer Plan & Profile',
+    'Sanitary Sewer/Water Main Plan & Profile', 'Booster Station Plan', 'Construction Details' ] },
+  { id: 'storm', name: 'Stormwater Management', tasks: [
+    'Preliminary SWMP', 'Final SWMP', 'Overall Drainage Study', 'Green Infrastructure' ] },
+  { id: 'final', name: 'Final Engineering', tasks: [
+    'Site Plan', 'Existing Site & Demolition Plan', 'Interim Grading & Drainage Plan',
+    'Master Grading & Drainage Plan', 'Erosion Control Plan', 'Roadway Paving', 'Intersection Details',
+    'Utility Plan', 'Road & Storm Sewer Plan & Profile', 'Sanitary Sewer/Water Main Plan & Profile',
+    'Pond/Basin Sheets', 'Booster Station Plan', 'Construction Details' ] },
+  { id: 'permits', name: 'Permits & Applications', tasks: [
+    'WDNR – Ch. 30 Grading', 'WDNR – Ch. 30 Pond', 'WDNR – Ch. 30 Wetland Fill',
+    'WDNR – Wetland Disturbance', 'WDNR – NR 216 WRAPP (NOI)', 'WDNR – Sewer', 'WDNR – Water',
+    'WDNR – ER Review', 'MMSD – Sewer', 'MMSD – Stormwater', 'County Land & Preservation',
+    'CTH Access', 'CTH Stormwater', 'CTH Utility', 'DSPS Plumbing', 'WisDOT', 'RR Crossing',
+    'SEWRPC Clearance Letter', 'WE Energies Coordination' ] },
+  { id: 'third', name: 'Third-Party Services', tasks: [
+    'Assured Wetland Delineation', 'Geotechnical Investigation', 'Traffic Analysis',
+    'Lighting Design', 'Landscape Plan', 'Lift Station Design' ] },
+  { id: 'construction', name: 'Construction & Closeout', tasks: [
+    'Construction Staking', 'Stake in Hole', 'Lot Grading Plan', 'Lot Piping',
+    'As-builts: Sanitary', 'As-builts: Water', 'As-builts: Storm', 'As-builts: Grading',
+    'As-builts: Pond' ] },
+];
+
+const STATUSES = [
+  { id: 'todo', label: 'Not started' },
+  { id: 'prog', label: 'In progress' },
+  { id: 'sub',  label: 'Submitted / In review' },
+  { id: 'done', label: 'Done' },
+];
+// Labels people can put on journal entries (edit freely; the first one is the default).
+const JOURNAL_TAGS = ['General', 'Engineering', 'Survey', 'Field / Site', 'Client', 'Agency / Permits', 'Schedule'];
+const SAVE_FILE_NAME = 'project-checklist.json';
+// Shortcut saved into each project folder when it's linked (hosted version only).
+const SHORTCUT_NAME = 'Project Checklist.url';
+const PROJECT_FIELDS = ['name', 'number', 'client', 'pm'];
+</script>
+<style>
+:root {
+  --bg: #f4f5f7; --surface: #ffffff; --surface-2: #f0f2f5; --border: #dde1e7; --border-strong: #c5cbd5;
+  --text: #1c2230; --muted: #667085; --faint: #98a2b3;
+  --accent: #1f5fbf; --accent-soft: #e7eefa; --accent-text: #ffffff;
+  --ok: #1e7a46; --ok-soft: #e2f3e9; --warn: #9a5800; --warn-soft: #fcefd8;
+  --bad: #b42318; --bad-soft: #fde8e6; --info: #5b3fb5; --info-soft: #eee9fb;
+  --shadow: 0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.07);
+  --radius: 10px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #13161b; --surface: #1b1f26; --surface-2: #232831; --border: #303643; --border-strong: #434b5a;
+    --text: #e6e8ec; --muted: #9aa3b2; --faint: #6b7383;
+    --accent: #78a6ff; --accent-soft: #1d2a44; --accent-text: #0c1322;
+    --ok: #5cc98a; --ok-soft: #16301f; --warn: #f0b45a; --warn-soft: #382a12;
+    --bad: #ff7d70; --bad-soft: #3b1b18; --info: #b5a1ff; --info-soft: #282140;
+    --shadow: none; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+
+/* ---------- header ---------- */
+header { background: var(--surface); border-bottom: 1px solid var(--border); }
+.head-top { display: flex; align-items: center; gap: 12px; padding-top: 14px; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.spacer { flex: 1; }
+.proj-name { width: 100%; border: 1px solid transparent; background: transparent; border-radius: 8px;
+  font-size: 26px; font-weight: 650; padding: 2px 8px; margin: 4px 0 2px -9px; }
+.proj-name:hover { border-color: var(--border); }
+.proj-name:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.proj-meta { display: flex; flex-wrap: wrap; gap: 6px 22px; padding-bottom: 12px; }
+.meta { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+.meta input { border: 1px solid transparent; background: transparent; border-radius: 6px; padding: 3px 6px; width: 150px; color: var(--text); }
+.meta input:hover { border-color: var(--border); }
+.meta input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+
+.tabs { display: flex; gap: 4px; }
+.tab { border: 0; background: none; padding: 10px 14px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; }
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tab .num { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 50%; background: var(--surface-2); font-size: 12px; margin-right: 6px; }
+.tab[aria-selected="true"] .num { background: var(--accent); color: var(--accent-text); }
+
+.btn { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 6px 12px; font-weight: 500; }
+.btn:hover { background: var(--surface-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); }
+.btn.primary:hover { filter: brightness(1.07); }
+.btn:disabled, .btn:disabled:hover { opacity: .45; cursor: not-allowed; filter: none; }
+.btn.primary:disabled { background: var(--accent); }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+.btn.ghost:hover { background: var(--surface-2); color: var(--text); }
+
+/* save status pill */
+.save { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); border-radius: 999px;
+  padding: 4px 12px 4px 10px; font-size: 12.5px; background: var(--surface); }
+.save .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); flex: none; }
+.save.ok .dot { background: var(--ok); }
+.save.busy .dot { background: var(--accent); }
+.save.warn { border-color: var(--warn); background: var(--warn-soft); }
+.save.warn .dot { background: var(--warn); }
+.save.bad { border-color: var(--bad); background: var(--bad-soft); }
+.save.bad .dot { background: var(--bad); }
+button.save:hover { filter: brightness(.97); }
+
+.menu-wrap { position: relative; }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.14); padding: 6px; min-width: 230px; z-index: 20; }
+.menu button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 6px; }
+.menu button:hover { background: var(--surface-2); }
+.menu hr { border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
+
+main.wrap { padding-top: 20px; padding-bottom: 60px; }
+
+/* ---------- choose view ---------- */
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 16px; }
+.search { flex: 1 1 260px; max-width: 360px; border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 7px 12px; }
+.search:focus { outline: none; border-color: var(--accent); }
+.hint { color: var(--muted); font-size: 13px; }
+.count-badge { font-weight: 600; color: var(--text); }
+.link { border: 0; background: none; color: var(--accent); font-size: 12.5px; padding: 4px 8px; border-radius: 4px; }
+.link:hover { background: var(--accent-soft); }
+
+/* accordion: one row per category, expands straight down */
+.acc { max-width: 860px; }
+.acc-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 8px; overflow: hidden; }
+.acc-head { display: flex; align-items: center; gap: 8px; padding-right: 10px; }
+.acc-head:hover { background: var(--surface-2); }
+.acc-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; border: 0; background: none; text-align: left; padding: 13px 4px 13px 16px; }
+.chev { width: 9px; height: 9px; flex: none; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(-45deg); transition: transform .15s; margin-right: 2px; }
+.acc-item.open .chev { transform: rotate(45deg) translate(-2px, -2px); }
+.acc-title { min-width: 0; flex: 1; }
+.acc-title b { font-size: 15px; font-weight: 600; }
+.acc-title .picked { display: block; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.acc-item.open .acc-title .picked { display: none; }
+.pill { flex: none; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 9px; background: var(--surface-2); color: var(--muted); }
+.pill.on { background: var(--accent-soft); color: var(--accent); }
+.acc-head .links { display: none; gap: 2px; }
+.acc-item.open .acc-head .links { display: flex; }
+.acc-item.open .acc-head { border-bottom: 1px solid var(--border); }
+.task-list { list-style: none; margin: 0; padding: 4px 0; }
+.opt { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: none; text-align: left; padding: 8px 16px 8px 44px; font-size: 14px; }
+.opt:hover { background: var(--surface-2); }
+.opt .box { width: 18px; height: 18px; flex: none; border: 1.5px solid var(--border-strong); border-radius: 5px; display: grid; place-items: center; background: var(--surface); }
+.opt[aria-pressed="true"] { font-weight: 600; }
+.opt[aria-pressed="true"] .box { background: var(--accent); border-color: var(--accent); }
+.opt[aria-pressed="true"] .box::after { content: ""; width: 9px; height: 5px; border: 2px solid var(--accent-text); border-top: 0; border-right: 0; transform: rotate(-45deg) translate(1px, -1px); }
+.task-list li.has-x { display: flex; align-items: center; padding-right: 10px; }
+.task-list li.has-x .opt { flex: 1; }
+.x-btn { flex: none; border: 0; background: none; color: var(--muted); border-radius: 6px; padding: 3px 8px; font-size: 12.5px; }
+.x-btn:hover, .x-btn:focus-visible { background: var(--bad-soft); color: var(--bad); }
+.opt.add { color: var(--muted); font-weight: 500; }
+.opt.add:hover { color: var(--accent); }
+.opt.add .box { border-style: dashed; font-size: 14px; line-height: 1; }
+.add-row { padding: 6px 16px 6px 44px; }
+.add-input { width: 100%; max-width: 420px; border: 1px solid var(--accent); border-radius: 6px; padding: 6px 10px; background: var(--surface); box-shadow: 0 0 0 3px var(--accent-soft); }
+.add-input:focus { outline: none; }
+.custom-tag { font-size: 10.5px; font-weight: 600; color: var(--info); background: var(--info-soft); border-radius: 4px; padding: 0 4px; }
+
+/* ---------- track view ---------- */
+.overall { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 16px; margin-bottom: 14px; box-shadow: var(--shadow); flex-wrap: wrap; }
+.bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; flex: 1 1 160px; min-width: 120px; }
+.bar > div { height: 100%; background: var(--ok); border-radius: 999px; transition: width .25s; }
+.stat { font-size: 13px; color: var(--muted); }
+.stat b { color: var(--text); }
+.stat.bad b { color: var(--bad); }
+.stat.warn b { color: var(--warn); }
+
+.seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: none; padding: 6px 11px; font-size: 13px; color: var(--muted); border-right: 1px solid var(--border); }
+.seg button:last-child { border-right: 0; }
+.seg button:hover { color: var(--text); background: var(--surface-2); }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.seg .c { font-size: 11.5px; opacity: .8; margin-left: 3px; }
+
+.section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 14px; overflow: hidden; }
+.sec-head { display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.sec-head h3 { margin: 0; font-size: 14.5px; }
+.sec-head .mini { width: 90px; height: 6px; flex: none; }
+.sec-head .n { color: var(--muted); font-size: 12.5px; margin-left: auto; }
+.cols, .row { display: grid; grid-template-columns: 172px minmax(180px, 1.1fr) 130px 142px minmax(200px, 1.6fr) 30px; gap: 10px; align-items: start; padding: 7px 16px; }
+.cols { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); padding-top: 8px; padding-bottom: 2px; }
+.row { border-top: 1px solid var(--border); }
+.cols + .row { border-top: 0; }
+.row .name { padding-top: 5px; font-weight: 550; }
+.row .name .cat { display: inline-block; margin-top: 3px; font-size: 11px; font-weight: 600; color: var(--text); background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; padding: 0 6px; text-decoration: none; }
+.row-more { position: relative; padding-top: 2px; }
+.icon-btn { width: 28px; height: 28px; border: 0; background: none; border-radius: 6px; color: var(--muted); font-size: 15px; line-height: 1; display: grid; place-items: center; }
+.icon-btn:hover, .icon-btn[aria-expanded="true"] { background: var(--surface-2); color: var(--text); }
+.row-menu { right: 0; top: 32px; min-width: 190px; }
+.row-menu button.danger { color: var(--bad); }
+.row-menu button.danger:hover { background: var(--bad-soft); }
+.person { border: 1px solid var(--border); background: var(--surface); border-radius: 8px; padding: 5px 8px; font-size: 13px; }
+.row.s-done .name { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--faint); font-weight: 500; }
+.f { width: 100%; border: 1px solid var(--border); background: var(--surface); border-radius: 6px; padding: 5px 8px; min-height: 32px; }
+.f:hover { border-color: var(--border-strong); }
+.f:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea.f { resize: none; overflow: hidden; display: block; line-height: 1.4; }
+input.f::placeholder, textarea.f::placeholder { color: var(--faint); }
+select.status { font-weight: 600; font-size: 13px; border-radius: 999px; padding: 5px 10px; appearance: auto; }
+select.st-todo { background: var(--surface-2); }
+select.st-prog { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+select.st-sub  { background: var(--info-soft); color: var(--info); border-color: transparent; }
+select.st-done { background: var(--ok-soft); color: var(--ok); border-color: transparent; }
+select.status option { background: var(--surface); color: var(--text); }
+.due-wrap { position: relative; }
+.due-flag { display: block; font-size: 11.5px; font-weight: 600; margin-top: 2px; }
+.due-wrap.overdue .f { border-color: var(--bad); background: var(--bad-soft); }
+.due-wrap.overdue .due-flag { color: var(--bad); }
+.due-wrap.soon .f { border-color: var(--warn); background: var(--warn-soft); }
+.due-wrap.soon .due-flag { color: var(--warn); }
+
+.empty { text-align: center; padding: 60px 20px; background: var(--surface); border: 1px dashed var(--border-strong); border-radius: var(--radius); color: var(--muted); }
+.empty h3 { color: var(--text); margin: 0 0 6px; font-size: 17px; }
+
+/* ---------- banner + dialog ---------- */
+.banner { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--radius);
+  margin-bottom: 16px; background: var(--warn-soft); border: 1px solid var(--warn); }
+.banner p { margin: 0; flex: 1 1 300px; }
+dialog { border: 1px solid var(--border); border-radius: 14px; padding: 0; background: var(--surface); color: var(--text); width: min(520px, calc(100vw - 32px)); box-shadow: 0 20px 50px rgba(0,0,0,.25); }
+dialog::backdrop { background: rgba(10,14,22,.45); }
+.dlg-body { padding: 22px 24px 8px; }
+.dlg-body h2 { margin: 0 0 8px; font-size: 18px; }
+.dlg-body p { margin: 0 0 12px; color: var(--muted); }
+.path { font-family: Consolas, ui-monospace, monospace; font-size: 12px; background: var(--surface-2); border-radius: 6px; padding: 6px 8px; word-break: break-all; color: var(--text); }
+.choice { display: grid; gap: 10px; margin: 14px 0 8px; }
+.choice button { text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: 10px; padding: 12px 14px; }
+.choice button:hover { border-color: var(--accent); background: var(--accent-soft); }
+.choice b { display: block; margin-bottom: 2px; }
+.choice span { color: var(--muted); font-size: 13px; }
+.dlg-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 24px 18px; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 8px; font-size: 13px; z-index: 50; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+
+.tip { font-size: 13px; background: var(--accent-soft); border-radius: 8px; padding: 8px 10px; margin-top: 10px; }
+kbd { font: 600 11.5px Consolas, ui-monospace, monospace; border: 1px solid var(--border-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; background: var(--surface); }
+.tab-sep { width: 1px; background: var(--border); margin: 10px 8px; }
+.tab-count { font-size: 11.5px; font-weight: 600; margin-left: 6px; background: var(--surface-2); color: var(--muted); border-radius: 999px; padding: 1px 7px; }
+.tab-count:empty { display: none; }
+.tab[aria-selected="true"] .tab-count { background: var(--accent-soft); color: var(--accent); }
+
+/* ---------- journal ---------- */
+.journal { max-width: 860px; }
+.compose { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 18px; }
+.compose:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.compose textarea { width: 100%; border: 0; background: transparent; resize: none; padding: 14px 16px 6px; min-height: 76px; display: block; line-height: 1.5; overflow: hidden; }
+.compose textarea:focus { outline: none; }
+.compose-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px 12px; border-top: 1px solid var(--border); }
+.compose-foot .f { width: auto; min-height: 30px; padding: 4px 8px; font-size: 13px; }
+.compose-foot .who-in { width: 150px; }
+.compose-foot .lbl { font-size: 12.5px; color: var(--muted); }
+.day { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 22px 0 8px; display: flex; align-items: center; gap: 10px; }
+.day::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.day.pinned-h { color: var(--warn); }
+.entry { display: grid; grid-template-columns: 34px 1fr; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; box-shadow: var(--shadow); }
+.entry.pinned { border-color: var(--warn); background: linear-gradient(var(--warn-soft), var(--warn-soft)) top / 100% 3px no-repeat, var(--surface); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; color: #fff; }
+.e-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.e-head .who { font-weight: 650; }
+.e-head .when { color: var(--muted); font-size: 12.5px; }
+.tag { font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 1px 8px; background: var(--surface-2); color: var(--muted); }
+.e-actions { margin-left: auto; display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
+.entry:hover .e-actions, .entry:focus-within .e-actions, .entry.pinned .e-actions .pin-on { opacity: 1; }
+@media (hover: none) { .e-actions { opacity: 1; } }
+.e-actions button { border: 0; background: none; color: var(--muted); font-size: 12.5px; padding: 2px 7px; border-radius: 5px; }
+.e-actions button:hover { background: var(--surface-2); color: var(--text); }
+.e-actions button.danger:hover { background: var(--bad-soft); color: var(--bad); }
+.e-body { margin-top: 4px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.5; }
+.e-body a { color: var(--accent); }
+.e-edit textarea { width: 100%; margin-top: 6px; min-height: 70px; }
+.e-edit .row-btns { display: flex; gap: 6px; margin-top: 6px; }
+.j-empty { text-align: center; color: var(--muted); padding: 36px 20px; border: 1px dashed var(--border-strong); border-radius: var(--radius); }
+
+.suggest { position: absolute; z-index: 40; list-style: none; margin: 0; padding: 4px; max-height: 240px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.16); }
+.suggest li { padding: 6px 10px; border-radius: 5px; cursor: pointer; white-space: nowrap; }
+.suggest li:hover { background: var(--surface-2); }
+.suggest li[aria-selected="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+.home-link { text-decoration: none; color: var(--accent); }
+.home-link:hover { text-decoration: underline; }
+body.home header { display: none; }
+.home { max-width: 560px; margin: 24px auto 0; }
+.home h1 { font-size: 26px; margin: 0 0 16px; }
+.home-form { display: flex; gap: 8px; margin-bottom: 8px; }
+.home-form .f { flex: 1; font-size: 16px; min-height: 38px; }
+.recent { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.recent li + li { border-top: 1px solid var(--border); }
+.recent a { display: flex; gap: 12px; align-items: baseline; padding: 11px 14px; color: var(--text); text-decoration: none; }
+.recent a:hover { background: var(--surface-2); }
+.recent .num { font-weight: 650; min-width: 70px; }
+.recent .nm { flex: 1; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recent .when { font-size: 12px; color: var(--faint); }
+.home h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 26px 0 8px; }
+
+[hidden] { display: none !important; }
+
+@media (max-width: 900px) {
+  .cols { display: none; }
+  .row { grid-template-columns: 1fr 1fr; }
+  .row .name { grid-column: 1 / -1; order: -1; }
+  .row .notes-cell { grid-column: 1 / -1; }
+  .row { position: relative; }
+  .row .name { padding-right: 36px; }
+  .row-more { position: absolute; right: 10px; top: 6px; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 14px; }
+  .proj-name { font-size: 21px; }
+  .head-top .eyebrow { display: none; }
+}
+
+/* ---------- print ---------- */
+@media print {
+  body { background: #fff; color: #000; font-size: 11px; }
+  .compose, .e-actions, .entry .avatar { display: none !important; }
+  .entry { grid-template-columns: 1fr; break-inside: avoid; box-shadow: none; }
+  .row-more, .cols span:last-child { visibility: hidden; }
+  .no-print, .tabs, .toolbar, .banner, .head-top .save, .menu-wrap, .head-top .btn { display: none !important; }
+  header { border: 0; }
+  .proj-name, .meta input { border: 0 !important; padding-left: 0; }
+  main.wrap { padding-top: 6px; }
+  .section, .overall { box-shadow: none; break-inside: auto; border-color: #bbb; }
+  .row { break-inside: avoid; padding-top: 4px; padding-bottom: 4px; }
+  .f { border-color: #ccc !important; background: #fff !important; min-height: 0; }
+  select.status { appearance: none; -webkit-appearance: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="head-top">
+      <a class="eyebrow home-link" id="homeLink" href="?" hidden>‹ All projects</a>
+      <span class="eyebrow" id="appName">Project Checklist</span>
+      <span class="spacer"></span>
+      <button class="save" id="saveBtn" type="button"><span class="dot"></span><span id="saveText">Loading…</span></button>
+      <div class="menu-wrap">
+        <button class="btn ghost" id="printBtn" type="button" aria-haspopup="true" aria-expanded="false">Print</button>
+        <div class="menu" id="printMenu" hidden>
+          <button type="button" data-print="tasks">Print task list</button>
+          <button type="button" data-print="journal">Print journal</button>
+        </div>
+      </div>
+      <div class="menu-wrap">
+        <button class="btn ghost" id="menuBtn" type="button" aria-haspopup="true" aria-expanded="false" title="More">•••</button>
+        <div class="menu" id="menu" hidden>
+          <button type="button" data-act="connect">Change save file…</button>
+          <button type="button" data-act="copylink" id="copyLinkItem" hidden>Copy link to this project</button>
+          <hr>
+          <button type="button" data-act="export">Download a copy (.json)</button>
+          <button type="button" data-act="import">Load from a .json file…</button>
+          <button type="button" data-act="template">Copy task selections from another project…</button>
+          <hr>
+          <button type="button" data-act="help">How saving works</button>
+        </div>
+      </div>
+    </div>
+    <input class="proj-name" id="projName" placeholder="Project name" aria-label="Project name" autocomplete="off">
+    <div class="proj-meta">
+      <label class="meta">Project #<input id="projNumber" placeholder="—" autocomplete="off"></label>
+      <label class="meta">Client<input id="projClient" placeholder="—" autocomplete="off"></label>
+      <label class="meta">Project manager<input id="projPm" placeholder="—" autocomplete="off"></label>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabChoose" type="button"><span class="num">1</span>Choose tasks</button>
+      <button class="tab" role="tab" id="tabTrack" type="button"><span class="num">2</span>Track progress</button>
+      <span class="tab-sep" aria-hidden="true"></span>
+      <button class="tab" role="tab" id="tabJournal" type="button">Journal<span class="tab-count" id="journalCount"></span></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banner"></div>
+  <section id="viewChoose" hidden></section>
+  <section id="viewTrack" hidden></section>
+  <section id="viewJournal" hidden></section>
+  <section id="viewHome" hidden>
+    <div class="home">
+      <h1>Project Checklist</h1>
+      <form id="homeForm" class="home-form" autocomplete="off">
+        <input class="f" id="homeId" placeholder="Project number" aria-label="Project number" required>
+        <button class="btn primary" type="submit">Open project</button>
+      </form>
+      <p class="hint">New project? Enter its number, then link it to the project folder. A shortcut to its checklist is saved in that folder for everyone to use.</p>
+      <div id="recentList"></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="connectDlg">
+  <div class="dlg-body">
+    <h2>Link this page to its project folder</h2>
+    <div id="localPathBox">
+      <p>Current location:</p>
+      <div class="path" id="folderPath"></div>
+      <button type="button" class="link" id="copyPath" style="padding:4px 0 0">Copy to clipboard</button>
+    </div>
+    <p id="hostedPathNote" hidden>Choose the folder for project <b id="dlgProjectId"></b>.</p>
+    <div class="choice">
+      <button type="button" id="dlgFolder"><b>Choose this project's folder</b><span>Creates save file or links to existing</span></button>
+    </div>
+    <p style="font-size:12.5px"><button type="button" class="link" id="dlgOpen" style="padding:0">Open a save file stored somewhere else…</button></p>
+    <p style="font-size:12.5px">You only do this once per project on each computer. After that, every change saves automatically.</p>
+  </div>
+  <div class="dlg-foot"><button class="btn" type="button" id="dlgCancel">Not now</button></div>
+</dialog>
+
+<dialog id="helpDlg">
+  <div class="dlg-body">
+    <h2>How saving works</h2>
+    <p>This page stores its data in <b>project-checklist.json</b>, next to this page in the project folder. Once the file is linked, every change saves to it automatically.</p>
+    <p>Several people can use the same project at once. The page checks the file every 20 seconds and whenever you switch back to it, and it merges everyone's changes. Nobody's notes get overwritten.</p>
+    <p>For security, browsers ask you to approve file access once per session. That's the yellow <b>Reconnect</b> bar you may see when you open the page.</p>
+    <p>Automatic saving needs <b>Microsoft Edge</b> or <b>Google Chrome</b>. In other browsers, use <b>••• › Download a copy</b> and <b>Load from a .json file</b>.</p>
+    <p id="helpNewLocal">To start a new project, copy this .html file into the new project folder and open it. The task list stays the same, and you choose the tasks for that project.</p>
+    <p id="helpNewHosted" hidden>To start a new project, go to <b>All projects</b>, enter the project number, and link it to the project folder. A <b>Project Checklist</b> shortcut is saved in that folder.</p>
+  </div>
+  <div class="dlg-foot"><button class="btn primary" type="button" id="helpClose">Got it</button></div>
+</dialog>
+
+<ul class="suggest" id="suggest" role="listbox" hidden></ul>
+<input type="file" id="fileInput" accept=".json,application/json" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const slug = s => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const FSA = 'showSaveFilePicker' in window;
+// Hosted: one page serves every project, told apart by ?project=<number> in the link.
+// Opened as a local file: each copy of the file is its own project, as in earlier versions.
+const HOSTED = location.protocol === 'http:' || location.protocol === 'https:';
+const PROJECT_ID = (new URLSearchParams(location.search).get('project') || '').trim();
+const SHOW_HOME = HOSTED && !PROJECT_ID;
+const PAGE_KEY = PROJECT_ID ? 'pc:project:' + PROJECT_ID.toLowerCase() : 'pc:' + decodeURIComponent(location.pathname || location.href);
+const projectUrl = id => location.origin + location.pathname + '?project=' + encodeURIComponent(id);
+const STATUS_IDS = STATUSES.map(s => s.id);
+
+const CATS = LIBRARY.map(c => ({
+  id: c.id, name: c.name,
+  tasks: c.tasks.map(n => ({ id: c.id + '.' + slug(n), name: n, cat: c.id })),
+}));
+const CAT_BY_ID = Object.fromEntries(CATS.map(c => [c.id, c]));
+
+function blankState() {
+  return { app: 'project-checklist', version: 2, project: { name: '', number: '', client: '', pm: '', m: 0, mf: {} }, tasks: {}, custom: [], journal: [], deleted: {}, updated: null };
+}
+// `m` fields are last-modified times (ms). They let two people's copies be merged item by item.
+function normalize(d) {
+  const s = blankState();
+  if (!d || typeof d !== 'object') return s;
+  Object.assign(s.project, d.project || {});
+  s.project.mf = { ...((d.project && d.project.mf) || {}) };
+  s.custom = Array.isArray(d.custom) ? d.custom.filter(t => t && t.id && t.name && CAT_BY_ID[t.cat]) : [];
+  for (const [id, t] of Object.entries(d.tasks || {})) {
+    if (!t || typeof t !== 'object') continue;
+    s.tasks[id] = { sel: !!t.sel, status: STATUS_IDS.includes(t.status) ? t.status : 'todo', due: t.due || '', who: t.who || '', notes: t.notes || '', m: +t.m || 0 };
+  }
+  s.journal = (Array.isArray(d.journal) ? d.journal : []).filter(j => j && j.id && typeof j.text === 'string').map(j => ({
+    id: j.id, created: j.created || new Date().toISOString(), date: j.date || (j.created || '').slice(0, 10) || todayISO(),
+    author: j.author || '', tag: j.tag || JOURNAL_TAGS[0], text: j.text, pinned: !!j.pinned, edited: j.edited || null, m: +j.m || 0,
+  }));
+  s.deleted = (d.deleted && typeof d.deleted === 'object') ? { ...d.deleted } : {};
+  s.updated = d.updated || null;
+  return s;
+}
+// Combine two copies of the data, keeping the newest version of each item and honoring deletions.
+function merge(mine, theirs) {
+  const out = normalize(JSON.parse(JSON.stringify(mine)));
+  const del = out.deleted = { ...theirs.deleted, ...mine.deleted };
+  // header fields merge one at a time (older files only have one shared time, `m`)
+  for (const k of PROJECT_FIELDS) {
+    const tm = theirs.project.mf[k] ?? theirs.project.m ?? 0, om = out.project.mf[k] ?? out.project.m ?? 0;
+    if (tm > om) { out.project[k] = theirs.project[k]; out.project.mf[k] = tm; }
+  }
+  for (const [id, t] of Object.entries(theirs.tasks)) {
+    const x = out.tasks[id];
+    if (!x || (t.m || 0) > (x.m || 0)) out.tasks[id] = { ...t };
+  }
+  const cm = new Map(out.custom.map(c => [c.id, c]));
+  for (const c of theirs.custom) if (!cm.has(c.id)) cm.set(c.id, { ...c });
+  out.custom = [...cm.values()].filter(c => !del[c.id]);
+  const jm = new Map(out.journal.map(j => [j.id, j]));
+  for (const j of theirs.journal) { const x = jm.get(j.id); if (!x || (j.m || 0) > (x.m || 0)) jm.set(j.id, { ...j }); }
+  out.journal = [...jm.values()].filter(j => !del[j.id]);
+  for (const id of Object.keys(del)) delete out.tasks[id];
+  out.updated = [mine.updated, theirs.updated].filter(Boolean).sort().pop() || null;
+  return out;
+}
+// Content comparison that ignores key order and list order (so two open pages don't keep re-saving each other).
+const canon = s => JSON.stringify({ ...s, updated: 0 }, (k, x) => {
+  if (Array.isArray(x)) return x.every(e => e && e.id) ? [...x].sort((a, b) => a.id < b.id ? -1 : 1) : x;
+  if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).sort(([a], [b]) => a < b ? -1 : 1));
+  return x;
+});
+const same = (a, b) => canon(a) === canon(b);
+
+let state = blankState();
+let view = null;            // 'choose' | 'track'
+let filter = 'all';         // all | open | soon | overdue | done
+let groupBy = 'phase';      // phase | due
+let search = '';
+
+const tasksIn = catId => CAT_BY_ID[catId].tasks.concat(state.custom.filter(t => t.cat === catId).map(t => ({ ...t, custom: true })));
+const rec = id => state.tasks[id] || { sel: false, status: 'todo', due: '', who: '', notes: '' };
+// ensure() is only called right before changing a task, so it stamps the modified time
+const ensure = id => { const r = state.tasks[id] || (state.tasks[id] = { sel: false, status: 'todo', due: '', who: '', notes: '' }); r.m = Date.now(); return r; };
+const hasData = r => !!(r.due || r.who || r.notes || r.status !== 'todo');
+function selectedTasks() {
+  const out = [];
+  for (const c of CATS) for (const t of tasksIn(c.id)) if (rec(t.id).sel) out.push({ ...t, catName: c.name });
+  return out;
+}
+
+/* ---------- dates ---------- */
+function todayISO() { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); }
+function daysUntil(iso) { return Math.round((new Date(iso + 'T00:00') - new Date(todayISO() + 'T00:00')) / 864e5); }
+function dueInfo(r) {
+  if (!r.due || r.status === 'done') return { cls: '', label: '' };
+  const n = daysUntil(r.due);
+  if (n < 0) return { cls: 'overdue', label: n === -1 ? 'Overdue by 1 day' : `Overdue by ${-n} days` };
+  if (n === 0) return { cls: 'soon', label: 'Due today' };
+  if (n <= 14) return { cls: 'soon', label: n === 1 ? 'Due tomorrow' : `Due in ${n} days` };
+  return { cls: '', label: '' };
+}
+function matchesFilter(r) {
+  const d = dueInfo(r).cls;
+  switch (filter) {
+    case 'open': return r.status !== 'done';
+    case 'soon': return d === 'soon';
+    case 'overdue': return d === 'overdue';
+    case 'done': return r.status === 'done';
+    default: return true;
+  }
+}
+
+/* ---------- storage: local backup ---------- */
+function saveLocal() { try { localStorage.setItem(PAGE_KEY, JSON.stringify(state)); } catch (e) {} }
+function loadLocal() { try { const t = localStorage.getItem(PAGE_KEY); return t ? normalize(JSON.parse(t)) : null; } catch (e) { return null; } }
+
+/* ---------- storage: IndexedDB remembers the file handle for this page ---------- */
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('project-checklist', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('handles');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const q = db.transaction('handles').objectStore('handles').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const tx = db.transaction('handles', 'readwrite'); tx.objectStore('handles').put(v, k); tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); }); }
+
+/* ---------- storage: the project-checklist.json file ---------- */
+let handle = null;          // FileSystemFileHandle
+let linked = false;         // handle present and permission granted
+let saveTimer = null, saving = false, pending = false, lastSaved = null, saveError = null;
+let knownMtime = 0;         // file's last-modified time as of our last read/write
+
+const PICKER_TYPES = [{ description: 'Project checklist data', accept: { 'application/json': ['.json'] } }];
+
+let saveDone = Promise.resolve();   // resolves when the current save (and any queued follow-up) finishes
+async function writeFile() {
+  if (!linked) return;
+  if (saving) { pending = true; return saveDone; }
+  let finish; saveDone = new Promise(r => finish = r);
+  saving = true; pending = false; saveError = null; renderSave();
+  let pulled = false;
+  try {
+    // If someone else saved since we last looked, fold their changes in before writing.
+    const f = await handle.getFile();
+    if (knownMtime && f.lastModified !== knownMtime) {
+      const theirs = parseState(await f.text());
+      if (theirs) { const merged = merge(state, theirs); pulled = !same(merged, state); state = merged; saveLocal(); }
+    }
+    const w = await handle.createWritable();
+    await w.write(JSON.stringify(state, null, 2));
+    await w.close();
+    knownMtime = (await handle.getFile()).lastModified;
+    lastSaved = new Date();
+  } catch (e) {
+    saveError = e.message || String(e);
+    if (e.name === 'NotAllowedError') linked = false;
+  }
+  saving = false;
+  if (pulled) softRender();
+  if (pending) await writeFile();
+  renderSave(); renderBanner();
+  finish();
+}
+// Pick up coworkers' changes while the page is open.
+async function checkRemote() {
+  if (!linked || saving || pending) return;
+  try {
+    const f = await handle.getFile();
+    if (f.lastModified === knownMtime) return;
+    const theirs = parseState(await f.text());
+    knownMtime = f.lastModified;
+    if (!theirs) return;
+    const merged = merge(state, theirs);
+    if (same(merged, state)) return;
+    state = merged; saveLocal(); softRender();
+    if (!same(merged, theirs)) changed();   // we had local edits they didn't; write the combined copy back
+  } catch (e) { /* file briefly locked by sync, try again next time */ }
+}
+setInterval(checkRemote, 20000);
+window.addEventListener('focus', checkRemote);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkRemote(); });
+
+// Re-render without yanking focus from someone mid-typing.
+let renderDeferred = false;
+function softRender() {
+  const a = document.activeElement;
+  if (a && a.matches && a.matches('input, textarea, select') && a.closest('main, header')) { renderDeferred = true; return; }
+  renderAll({ keepScroll: true });
+}
+document.addEventListener('focusout', () => setTimeout(() => afterPointer(() => {
+  if (renderDeferred) { renderDeferred = false; softRender(); }
+}), 0));
+
+// Redrawing between mouse-down and click would swallow the click, so wait for any click in progress.
+let pointerDown = false;
+document.addEventListener('pointerdown', () => { pointerDown = true; }, true);
+const pointerEnd = () => setTimeout(() => { pointerDown = false; }, 0);
+document.addEventListener('pointerup', pointerEnd, true);
+document.addEventListener('pointercancel', pointerEnd, true);
+function afterPointer(fn) {
+  if (!pointerDown) return fn();
+  let ran = false;
+  const go = () => { if (!ran) { ran = true; setTimeout(fn, 0); } };
+  document.addEventListener('pointerup', go, { once: true, capture: true });
+  document.addEventListener('pointercancel', go, { once: true, capture: true });
+}
+function changed() {
+  state.updated = new Date().toISOString();
+  saveLocal();
+  if (linked) { pending = true; clearTimeout(saveTimer); saveTimer = setTimeout(writeFile, 450); }
+  renderSave();
+}
+function parseState(txt) {
+  if (!txt.trim()) return null;
+  const d = JSON.parse(txt);
+  if (d.app && d.app !== 'project-checklist') throw new Error('That file is not a project checklist save file.');
+  return normalize(d);
+}
+async function readHandle(h) { return parseState(await (await h.getFile()).text()); }
+async function useHandle(h, { preferFile }) {
+  const f = await h.getFile();
+  const fileState = parseState(await f.text());
+  handle = h; linked = true; knownMtime = f.lastModified;
+  await idbSet(PAGE_KEY, h).catch(() => {});
+  if (fileState && preferFile) { state = fileState; saveLocal(); }
+  else if (fileState) {
+    // combine the file with anything edited here while disconnected
+    const merged = merge(state, fileState);
+    state = merged; saveLocal();
+    if (!same(merged, fileState)) await writeFile();
+  } else await writeFile();   // empty file
+  lastSaved = lastSaved || new Date();
+  renderAll({ keepScroll: true });
+}
+
+// Browsers can't open the picker at a typed-in folder, so copy the full path for a quick Ctrl+V.
+function pageFolder() {
+  return decodeURIComponent(location.pathname).replace(/^\/([A-Za-z]:)/, '$1').replace(/\/[^/]*$/, '').replace(/\//g, '\\');
+}
+// Copy text, then read it back from a hidden box placed inside any open dialog
+// (a modal dialog blocks everything behind it, so a box on the page itself copies nothing).
+async function copyText(s) {
+  try { await navigator.clipboard.writeText(s); return true; } catch (e) { /* fall back below */ }
+  const host = document.querySelector('dialog[open]') || document.body;
+  const ta = document.createElement('textarea');
+  ta.value = s; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;width:1px;height:1px';
+  host.appendChild(ta); ta.focus(); ta.select();
+  let ok = false; try { ok = document.execCommand('copy'); } catch (e) {}
+  ta.remove(); return ok;
+}
+function pickerOpts() {
+  const o = { types: PICKER_TYPES };
+  if (handle) o.startIn = handle;   // when changing files, start beside the current one
+  return o;
+}
+
+// Link by choosing the project FOLDER rather than using a "Save as" window: browsers empty an
+// existing file the moment it's picked in "Save as", which could wipe a coworker's data.
+// With the folder, we can look for an existing save file first and combine with it.
+async function connectFolder() {
+  closeDlg();
+  try {
+    const o = { mode: 'readwrite' };
+    if (handle) o.startIn = handle;
+    const dir = await window.showDirectoryPicker(o);
+    let h = null, existing = null;
+    try { h = await dir.getFileHandle(SAVE_FILE_NAME); }
+    catch (e) { if (e.name !== 'NotFoundError') throw e; }
+    if (h) existing = await readHandle(h);   // throws (and links nothing) if the file isn't readable checklist data
+    const expected = PROJECT_ID || state.project.number;
+    if (existing && expected && existing.project.number && existing.project.number.toLowerCase() !== expected.toLowerCase() &&
+        !confirm(`The save file in that folder is for project # ${existing.project.number}, but this page is for project # ${expected}. Link to it anyway? Both sets of data will be combined.`)) return;
+    if (!h) h = await dir.getFileHandle(SAVE_FILE_NAME, { create: true });
+    await useHandle(h, { preferFile: false });
+    if (HOSTED && PROJECT_ID) await saveShortcut(dir);
+    toast(existing ? "Found this project's save file. Linked and up to date." : `Created ${SAVE_FILE_NAME} in ${dir.name}`, 4000);
+  } catch (e) { if (e.name !== 'AbortError') toast('Could not use that folder: ' + e.message, 6000); }
+}
+// Put a double-click shortcut to this project's page in its folder (only if there isn't one already).
+async function saveShortcut(dir) {
+  try {
+    try { await dir.getFileHandle(SHORTCUT_NAME); return; } catch (e) { if (e.name !== 'NotFoundError') return; }
+    const f = await dir.getFileHandle(SHORTCUT_NAME, { create: true });
+    const w = await f.createWritable();
+    await w.write(`[InternetShortcut]\r\nURL=${projectUrl(PROJECT_ID)}\r\n`);
+    await w.close();
+  } catch (e) { /* the checklist still works without the shortcut */ }
+}
+async function connectOpen() {
+  closeDlg();
+  try {
+    const [h] = await window.showOpenFilePicker(pickerOpts());
+    const incoming = await readHandle(h);
+    if (incoming && state.updated && selectedTasks().length && !confirm('Load ' + h.name + '? It will replace what is currently on screen.')) return;
+    if (incoming && state.project.number && incoming.project.number && incoming.project.number !== state.project.number &&
+        !confirm(`That file is for project # ${incoming.project.number}, but this page is set to project # ${state.project.number}. Load it anyway?`)) return;
+    await useHandle(h, { preferFile: true });
+    toast('Linked to ' + h.name);
+  } catch (e) { if (e.name !== 'AbortError') toast('Could not open the file: ' + e.message); }
+}
+async function reconnect() {
+  try {
+    if ((await handle.requestPermission({ mode: 'readwrite' })) === 'granted') await useHandle(handle, { preferFile: false });
+  } catch (e) {
+    toast('That file could not be opened. It may have been moved or renamed.');
+    handle = null; linked = false; renderAll();
+  }
+}
+
+/* ---------- export / import ---------- */
+function exportJson() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  const base = [state.project.number, state.project.name].filter(Boolean).join(' ') || 'project';
+  a.href = URL.createObjectURL(blob); a.download = base.replace(/[\\/:*?"<>|]+/g, '-') + ' - checklist.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+let importMode = 'full';
+function pickImport(mode) { importMode = mode; $('#fileInput').value = ''; $('#fileInput').click(); }
+$('#fileInput').addEventListener('change', async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = normalize(JSON.parse(await f.text()));
+    if (importMode === 'template') {
+      // copy only which tasks are selected (and their custom tasks), not dates/notes/status/journal
+      const want = new Set(Object.entries(d.tasks).filter(([, t]) => t.sel).map(([id]) => id));
+      const off = Object.keys(state.tasks).filter(id => !want.has(id) && state.tasks[id].sel);
+      const offWithData = off.filter(id => hasData(state.tasks[id])).length;
+      const on = [...want].filter(id => !rec(id).sel).length;
+      if (off.length && !confirm(`This will check ${on} task${on === 1 ? '' : 's'} and uncheck ${off.length} task${off.length === 1 ? '' : 's'} that ${off.length === 1 ? 'is' : 'are'} checked now.` +
+          (offWithData ? `\n\n${offWithData} of the unchecked tasks ${offWithData === 1 ? 'has' : 'have'} a status, date or notes. ${offWithData === 1 ? 'It is' : 'They are'} kept and will come back if you check ${offWithData === 1 ? 'it' : 'them'} again.` : '') +
+          '\n\nContinue?')) return;
+      for (const c of d.custom) if (want.has(c.id) && !state.custom.some(x => x.id === c.id)) state.custom.push({ ...c });
+      for (const id of Object.keys(state.tasks)) if (!want.has(id) && state.tasks[id].sel) ensure(id).sel = false;
+      for (const id of want) ensure(id).sel = true;
+      toast(`Copied ${want.size} task selections`);
+      view = 'choose';
+    } else {
+      if (selectedTasks().length && !confirm('Replace what is on screen with ' + f.name + '?')) return;
+      // Stamp everything as new so this replacement wins over older copies on coworkers' screens,
+      // and mark anything that isn't in the loaded file as removed.
+      const now = Date.now();
+      for (const t of Object.values(d.tasks)) t.m = now;
+      for (const id of Object.keys(state.tasks)) if (!d.tasks[id]) d.tasks[id] = { sel: false, status: 'todo', due: '', who: '', notes: '', m: now };
+      for (const j of d.journal) j.m = now;
+      for (const k of PROJECT_FIELDS) d.project.mf[k] = now;
+      d.deleted = { ...state.deleted, ...d.deleted };
+      const keepIds = new Set([...d.journal, ...d.custom].map(x => x.id));
+      for (const x of [...state.journal, ...state.custom]) if (!keepIds.has(x.id)) d.deleted[x.id] = now;
+      for (const id of keepIds) delete d.deleted[id];
+      state = d; toast('Loaded ' + f.name);
+    }
+    changed(); renderAll();
+  } catch (err) { toast('That file could not be read as a checklist.'); }
+});
+
+/* ---------- rendering: header / save status / banner ---------- */
+const RECENT_KEY = 'pc:recent';
+function getRecent() { try { return JSON.parse(localStorage.getItem(RECENT_KEY)) || []; } catch (e) { return []; } }
+function rememberProject() {
+  if (!HOSTED || !PROJECT_ID) return;
+  const list = getRecent().filter(r => r.id.toLowerCase() !== PROJECT_ID.toLowerCase());
+  list.unshift({ id: PROJECT_ID, name: state.project.name || '', t: Date.now() });
+  try { localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 30))); } catch (e) {}
+}
+function renderHome() {
+  document.body.classList.add('home');
+  document.title = 'Project Checklist';
+  $('#viewHome').hidden = false;
+  const recent = getRecent();
+  $('#recentList').innerHTML = recent.length ? `<h3>Recently opened on this computer</h3><ul class="recent">${recent.map(r => `
+    <li><a href="${esc(projectUrl(r.id))}"><span class="num">${esc(r.id)}</span><span class="nm">${esc(r.name)}</span>
+      <span class="when">${new Date(r.t).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span></a></li>`).join('')}</ul>` : '';
+  $('#homeForm').onsubmit = e => {
+    e.preventDefault();
+    const id = $('#homeId').value.trim();
+    if (id) location.href = projectUrl(id);
+  };
+  $('#homeId').focus();
+}
+function renderProject() {
+  if (PROJECT_ID && !state.project.number) state.project.number = PROJECT_ID;   // unstamped, so a saved number always wins
+  $('#projName').value = state.project.name;
+  $('#projNumber').value = state.project.number;
+  $('#projClient').value = state.project.client;
+  $('#projPm').value = state.project.pm;
+  document.title = (state.project.name ? state.project.name + ' – ' : '') + 'Project Checklist';
+}
+function renderSave() {
+  const btn = $('#saveBtn'), txt = $('#saveText');
+  btn.className = 'save';
+  if (!FSA) { btn.classList.add('warn'); txt.textContent = 'Auto-save needs Edge or Chrome'; return; }
+  if (saveError) { btn.classList.add('bad'); txt.textContent = 'Save failed. Click to retry'; return; }
+  if (linked) {
+    if (saving || pending) { btn.classList.add('busy'); txt.textContent = 'Saving…'; return; }
+    btn.classList.add('ok');
+    txt.textContent = 'Saved to ' + handle.name + (lastSaved ? ' · ' + lastSaved.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '');
+    return;
+  }
+  btn.classList.add('warn');
+  txt.textContent = handle ? 'Not saving. Click to reconnect' : 'Not saving yet. Choose a save file';
+}
+function renderBanner() {
+  const b = $('#banner');
+  if (FSA && handle && !linked) {
+    b.innerHTML = `<div class="banner no-print"><p><b>Reconnect to ${esc(handle.name)}</b> to load the latest data and keep saving. Your browser asks for this once per session.</p><button class="btn primary" type="button" id="reconnectBtn">Reconnect</button></div>`;
+    $('#reconnectBtn').onclick = reconnect;
+  } else if (FSA && !handle && state.updated) {
+    b.innerHTML = `<div class="banner no-print"><p><b>Your changes aren't saved to the project folder yet.</b> Choose a save file so they don't get lost.</p><button class="btn primary" type="button" id="chooseFileBtn">Choose save file</button></div>`;
+    $('#chooseFileBtn').onclick = openConnect;
+  } else if (!FSA) {
+    b.innerHTML = `<div class="banner no-print"><p>This browser can't save to the project folder automatically. Open this file in <b>Edge</b> or <b>Chrome</b>, or use <b>••• › Download a copy</b> before closing.</p></div>`;
+  } else b.innerHTML = '';
+}
+
+/* ---------- rendering: choose view ---------- */
+function renderChoose() {
+  const el = $('#viewChoose');
+  const total = selectedTasks().length;
+  const q = search.trim().toLowerCase();
+  let items = '';
+  for (const c of CATS) {
+    const list = tasksIn(c.id);
+    const shown = q ? list.filter(t => t.name.toLowerCase().includes(q) || c.name.toLowerCase().includes(q)) : list;
+    if (q && !shown.length) continue;
+    const picked = list.filter(t => rec(t.id).sel);
+    const isOpen = q ? !searchClosed.has(c.id) : expanded.has(c.id);   // searching opens every matching category
+    const rows = shown.map(t => {
+      const on = rec(t.id).sel;
+      const opt = `<button type="button" class="opt" data-toggle="${esc(t.id)}" aria-pressed="${on}"><span class="box"></span><span>${esc(t.name)}${t.custom ? ' <span class="custom-tag">custom</span>' : ''}</span></button>`;
+      return t.custom
+        ? `<li class="has-x">${opt}<button type="button" class="x-btn" data-del="${esc(t.id)}" aria-label="Delete custom task ${esc(t.name)}">Delete</button></li>`
+        : `<li>${opt}</li>`;
+    }).join('');
+    items += `<div class="acc-item${isOpen ? ' open' : ''}" data-cat="${c.id}">
+      <div class="acc-head">
+        <button type="button" class="acc-toggle" data-expand="${c.id}" aria-expanded="${isOpen}">
+          <span class="chev"></span>
+          <span class="acc-title"><b>${esc(c.name)}</b>${picked.length ? `<span class="picked">${esc(picked.map(t => t.name).join(' · '))}</span>` : ''}</span>
+          <span class="pill${picked.length ? ' on' : ''}">${picked.length ? picked.length + ' of ' + list.length + ' selected' : list.length + ' tasks'}</span>
+        </button>
+        <span class="links"><button type="button" class="link" data-all="${c.id}">Select all</button><button type="button" class="link" data-none="${c.id}">Clear</button></span>
+      </div>
+      ${isOpen ? `<ul class="task-list">${rows}<li data-add-slot="${c.id}"><button type="button" class="opt add" data-add="${c.id}"><span class="box">+</span>Add a task not on this list</button></li></ul>` : ''}
+    </div>`;
+  }
+  const allOpen = CATS.every(c => expanded.has(c.id));
+  el.innerHTML = `
+    <div class="toolbar acc" style="margin-bottom:12px">
+      <input class="search" id="search" type="search" placeholder="Find a task…" value="${esc(search)}" aria-label="Find a task">
+      <span class="hint"><span class="count-badge">${total} selected</span></span>
+      <span class="spacer"></span>
+      <button class="link" type="button" id="toggleAll">${allOpen ? 'Collapse all' : 'Expand all'}</button>
+      <button class="btn primary" type="button" id="goTrack" ${total ? '' : 'disabled'}>Done, track progress →</button>
+    </div>
+    <p class="hint" style="margin:0 0 12px">Open a category and check each task this project needs.</p>
+    <div class="acc">${items || '<p class="hint">No tasks match that search.</p>'}</div>`;
+
+  const s = $('#search');
+  s.oninput = () => { search = s.value; searchClosed.clear(); renderChoose(); const n = $('#search'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  $('#goTrack').onclick = () => setView('track');
+  $('#toggleAll').onclick = () => { if (allOpen) expanded.clear(); else CATS.forEach(c => expanded.add(c.id)); renderChoose(); };
+}
+const expanded = new Set();      // categories start collapsed
+const searchClosed = new Set();  // categories collapsed by hand during the current search
+$('#viewChoose').addEventListener('click', e => {
+  const ex = e.target.closest('[data-expand]');
+  if (ex) {
+    const id = ex.dataset.expand, set = search.trim() ? searchClosed : expanded;
+    // during a search everything matching starts open, so a click closes; otherwise a click opens
+    if (set.has(id)) set.delete(id); else set.add(id);
+    renderChoose(); return;
+  }
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    const id = del.dataset.del, t = state.custom.find(x => x.id === id);
+    if (t && hasData(rec(id)) && !confirm(`Remove "${t.name}"? Its dates and notes will be deleted.`)) return;
+    state.custom = state.custom.filter(x => x.id !== id); delete state.tasks[id]; state.deleted[id] = Date.now();
+    changed(); renderChoose(); return;
+  }
+  const tg = e.target.closest('[data-toggle]');
+  if (tg) {
+    const id = tg.dataset.toggle, cur = rec(id);
+    if (cur.sel && hasData(cur) && !confirm('This task has a status, date or notes. Remove it from the project anyway? (Its notes are kept if you add it back.)')) return;
+    const r = ensure(id); r.sel = !r.sel; changed(); renderChoose(); return;
+  }
+  const all = e.target.closest('[data-all]');
+  if (all) { tasksIn(all.dataset.all).forEach(t => ensure(t.id).sel = true); changed(); renderChoose(); return; }
+  const none = e.target.closest('[data-none]');
+  if (none) {
+    const list = tasksIn(none.dataset.none).filter(t => rec(t.id).sel);
+    if (list.some(t => hasData(rec(t.id))) && !confirm('Some of these tasks have dates or notes. Deselect them all anyway? (Notes are kept if you add them back.)')) return;
+    list.forEach(t => ensure(t.id).sel = false); changed(); renderChoose(); return;
+  }
+  const add = e.target.closest('[data-add]');
+  if (add) {
+    const inp = document.createElement('input');
+    inp.className = 'add-input'; inp.placeholder = 'Type the task name, then press Enter';
+    const slot = add.parentElement; slot.className = 'add-row';
+    add.replaceWith(inp); inp.focus();
+    let done = false;
+    // how: 'enter' (save, then open another box), 'blur' (save), 'escape' (discard)
+    const commit = how => {
+      if (done) return; done = true;
+      const name = how === 'escape' ? '' : inp.value.trim();
+      if (name) {
+        const id = add.dataset.add + '.custom-' + Date.now().toString(36);
+        state.custom.push({ id, cat: add.dataset.add, name });
+        ensure(id).sel = true; changed();
+      }
+      if (how === 'enter') {
+        renderChoose();
+        if (name) { const nb = $(`[data-add="${add.dataset.add}"]`); nb && nb.click(); }
+      } else afterPointer(renderChoose);   // if a click caused the blur, let it land first
+    };
+    inp.onkeydown = ev => { if (ev.key === 'Enter') commit('enter'); if (ev.key === 'Escape') commit('escape'); };
+    inp.onblur = () => commit('blur');
+  }
+});
+
+/* ---------- rendering: track view ---------- */
+function rowHtml(t, showCat) {
+  const r = rec(t.id), d = dueInfo(r);
+  const opts = STATUSES.map(s => `<option value="${s.id}"${s.id === r.status ? ' selected' : ''}>${s.label}</option>`).join('');
+  return `<div class="row s-${r.status}" data-id="${esc(t.id)}">
+    <select class="f status st-${r.status}" data-k="status" aria-label="Status">${opts}</select>
+    <div class="name">${esc(t.name)}${showCat ? `<span class="cat">${esc(t.catName)}</span>` : ''}</div>
+    <input class="f" data-k="who" value="${esc(r.who)}" placeholder="Who" aria-label="Assigned to" data-people autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">
+    <div class="due-wrap ${d.cls}"><input class="f" type="date" data-k="due" value="${esc(r.due)}" aria-label="Due date"><span class="due-flag">${d.label}</span></div>
+    <div class="notes-cell"><textarea class="f" data-k="notes" rows="1" placeholder="Notes" aria-label="Notes">${esc(r.notes)}</textarea></div>
+    <div class="row-more"><button type="button" class="icon-btn" data-more aria-haspopup="true" aria-expanded="false" aria-label="More options for ${esc(t.name)}">⋯</button></div>
+  </div>`;
+}
+const COLS = '<div class="cols"><span>Status</span><span>Task</span><span>Who</span><span>Due</span><span>Notes</span><span></span></div>';
+
+/* people: names typed into "Who" and journal authors, offered as suggestions and as a filter */
+const PERSON_ALL = '*all', PERSON_NONE = '*none';
+let person = PERSON_ALL;
+const normName = s => (s || '').trim().replace(/\s+/g, ' ').toLowerCase();
+function uniqueNames(list) {
+  const m = new Map();
+  for (const n of list) { const k = normName(n); if (k && !m.has(k)) m.set(k, n.trim().replace(/\s+/g, ' ')); }
+  return [...m.values()].sort((a, b) => a.localeCompare(b));
+}
+const assignees = () => uniqueNames(selectedTasks().map(t => rec(t.id).who));
+let peopleNames = [];
+function updatePeopleList() {
+  peopleNames = uniqueNames([...Object.values(state.tasks).map(t => t.who), ...state.journal.map(j => j.author), getAuthor()]);
+}
+
+/* Name suggestions for "Who" and journal author boxes. (The browser's built-in list only shows
+   names matching what's already typed, so a filled-in box offered just its own name.)
+   Clicking in shows everyone; typing narrows the list. */
+const suggest = $('#suggest');
+let sgInput = null, sgItems = [], sgActive = -1;
+function sgOpen(inp) {
+  sgInput = inp;
+  const typed = normName(inp.value);
+  const exact = peopleNames.some(n => normName(n) === typed);
+  sgItems = (!typed || exact) ? peopleNames.slice() : peopleNames.filter(n => normName(n).includes(typed));
+  if (!sgItems.length) return sgClose();
+  sgActive = sgItems.findIndex(n => normName(n) === typed);
+  suggest.innerHTML = sgItems.map((n, i) => `<li role="option" data-i="${i}" aria-selected="${i === sgActive}">${esc(n)}</li>`).join('');
+  const r = inp.getBoundingClientRect();
+  suggest.style.left = (r.left + window.scrollX) + 'px';
+  suggest.style.top = (r.bottom + window.scrollY + 4) + 'px';
+  suggest.style.minWidth = r.width + 'px';
+  suggest.hidden = false;
+  inp.setAttribute('aria-expanded', 'true');
+}
+function sgClose() {
+  suggest.hidden = true;
+  if (sgInput) sgInput.setAttribute('aria-expanded', 'false');
+  sgInput = null; sgItems = []; sgActive = -1;
+}
+function sgPick(i) {
+  const inp = sgInput; if (!inp || !sgItems[i]) return;
+  inp.value = sgItems[i];
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  sgClose();
+}
+function sgMove(d) {
+  if (!sgItems.length) return;
+  sgActive = (sgActive + d + sgItems.length) % sgItems.length;
+  suggest.querySelectorAll('li').forEach((li, i) => li.setAttribute('aria-selected', i === sgActive));
+}
+document.addEventListener('focusin', e => { if (e.target.matches('[data-people]')) sgOpen(e.target); });
+document.addEventListener('click', e => { if (e.target.matches('[data-people]') && suggest.hidden) sgOpen(e.target); });
+document.addEventListener('input', e => { if (e.target.matches('[data-people]') && e.target === document.activeElement) sgOpen(e.target); });
+document.addEventListener('focusout', e => { if (e.target === sgInput) sgClose(); });
+document.addEventListener('keydown', e => {
+  if (!e.target.matches('[data-people]')) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); if (suggest.hidden) sgOpen(e.target); else sgMove(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); sgMove(-1); }
+  else if (e.key === 'Enter' && !suggest.hidden && sgActive >= 0) { e.preventDefault(); sgPick(sgActive); }
+  else if (e.key === 'Escape' && !suggest.hidden) { e.stopPropagation(); sgClose(); }
+}, true);
+suggest.addEventListener('mousedown', e => {   // mousedown + preventDefault keeps focus in the box
+  const li = e.target.closest('li'); if (!li) return;
+  e.preventDefault(); sgPick(+li.dataset.i);
+});
+window.addEventListener('resize', sgClose);
+window.addEventListener('scroll', () => { if (sgInput) sgOpen(sgInput); }, { passive: true });
+const personMatch = t => person === PERSON_ALL ? true : person === PERSON_NONE ? !normName(rec(t.id).who) : normName(rec(t.id).who) === person;
+const visibleTasks = () => selectedTasks().filter(personMatch);
+
+function counts(list) {
+  const c = { all: list.length, open: 0, soon: 0, overdue: 0, done: 0 };
+  for (const t of list) {
+    const r = rec(t.id), d = dueInfo(r).cls;
+    if (r.status === 'done') c.done++; else c.open++;
+    if (d === 'soon') c.soon++;
+    if (d === 'overdue') c.overdue++;
+  }
+  return c;
+}
+function renderTrack() {
+  const el = $('#viewTrack');
+  const sel = selectedTasks();
+  if (!sel.length) {
+    el.innerHTML = `<div class="empty"><h3>No tasks chosen yet</h3><p>Start by choosing the tasks this project needs.</p><button class="btn primary" type="button" id="emptyGo">Choose tasks</button></div>`;
+    $('#emptyGo').onclick = () => setView('choose');
+    return;
+  }
+  const names = assignees();
+  if (person !== PERSON_ALL && person !== PERSON_NONE && !names.some(n => normName(n) === person)) person = PERSON_ALL;
+  const base = sel.filter(personMatch);
+  const c = counts(base);
+  const pct = c.all ? Math.round(c.done / c.all * 100) : 0;
+  const personLabel = person === PERSON_ALL ? '' : person === PERSON_NONE ? 'Unassigned tasks' : 'Tasks for ' + names.find(n => normName(n) === person);
+  const seg = (k, label) => `<button type="button" data-filter="${k}" aria-pressed="${filter === k}">${label}<span class="c">${c[k]}</span></button>`;
+
+  let body = '';
+  if (groupBy === 'phase') {
+    for (const cat of CATS) {
+      const all = base.filter(t => t.cat === cat.id);
+      if (!all.length) continue;
+      const shown = all.filter(t => matchesFilter(rec(t.id)));
+      if (!shown.length) continue;
+      const done = all.filter(t => rec(t.id).status === 'done').length;
+      body += `<div class="section" data-cat="${cat.id}"><div class="sec-head"><h3>${esc(cat.name)}</h3>
+        <div class="bar mini"><div style="width:${Math.round(done / all.length * 100)}%"></div></div>
+        <span class="n">${done} of ${all.length} done</span></div>${COLS}${shown.map(t => rowHtml(t, false)).join('')}</div>`;
+    }
+  } else {
+    const shown = base.filter(t => matchesFilter(rec(t.id))).sort((a, b) => {
+      const da = rec(a.id).due, db = rec(b.id).due;
+      if (!da !== !db) return da ? -1 : 1;
+      return da < db ? -1 : da > db ? 1 : 0;
+    });
+    if (shown.length) body = `<div class="section"><div class="sec-head"><h3>All tasks by due date</h3><span class="n">Tasks without a date are listed last</span></div>${COLS}${shown.map(t => rowHtml(t, true)).join('')}</div>`;
+  }
+  if (!body) body = `<div class="empty"><h3>Nothing here</h3><p>No tasks match this filter.</p></div>`;
+
+  el.innerHTML = `
+    <div class="overall">
+      <div class="bar"><div id="pctBar" style="width:${pct}%"></div></div>
+      <span class="stat"><b id="stDone">${c.done}</b> of <b>${c.all}</b> done</span>
+      <span class="stat ${c.overdue ? 'bad' : ''}"><b>${c.overdue}</b> overdue</span>
+      <span class="stat ${c.soon ? 'warn' : ''}"><b>${c.soon}</b> due within 2 weeks</span>
+      ${personLabel ? `<span class="stat">· <b>${esc(personLabel)}</b></span>` : ''}
+    </div>
+    <div class="toolbar">
+      <div class="seg" role="group" aria-label="Filter">${seg('all', 'All')}${seg('open', 'Open')}${seg('soon', 'Due soon')}${seg('overdue', 'Overdue')}${seg('done', 'Done')}</div>
+      <select class="person" id="personSel" aria-label="Show tasks for">
+        <option value="${PERSON_ALL}"${person === PERSON_ALL ? ' selected' : ''}>Everyone</option>
+        ${names.map(n => `<option value="${esc(normName(n))}"${person === normName(n) ? ' selected' : ''}>${esc(n)}</option>`).join('')}
+        <option value="${PERSON_NONE}"${person === PERSON_NONE ? ' selected' : ''}>Unassigned</option>
+      </select>
+      <span class="spacer"></span>
+      <div class="seg" role="group" aria-label="Group by">
+        <button type="button" data-group="phase" aria-pressed="${groupBy === 'phase'}">By phase</button>
+        <button type="button" data-group="due" aria-pressed="${groupBy === 'due'}">By due date</button>
+      </div>
+    </div>
+    ${body}`;
+  el.querySelectorAll('textarea').forEach(grow);
+  $('#personSel').onchange = e => { person = e.target.value; renderTrack(); };
+  updatePeopleList();
+}
+function grow(ta) {
+  if (!ta) return;
+  ta.style.height = 'auto';
+  if (ta.offsetWidth) ta.style.height = ta.scrollHeight + 2 + 'px';   // skip when not laid out yet
+}
+let growTimer;
+window.addEventListener('resize', () => { clearTimeout(growTimer); growTimer = setTimeout(() => document.querySelectorAll('main textarea').forEach(grow), 100); });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) document.querySelectorAll('main textarea').forEach(grow); });
+
+function refreshTrackStats() {
+  const sel = visibleTasks(), c = counts(sel), pct = c.all ? Math.round(c.done / c.all * 100) : 0;
+  $('#pctBar').style.width = pct + '%'; $('#stDone').textContent = c.done;
+  const stats = $('#viewTrack').querySelectorAll('.overall .stat');
+  stats[1].className = 'stat' + (c.overdue ? ' bad' : ''); stats[1].firstElementChild.textContent = c.overdue;
+  stats[2].className = 'stat' + (c.soon ? ' warn' : ''); stats[2].firstElementChild.textContent = c.soon;
+  $('#viewTrack').querySelectorAll('[data-filter]').forEach(b => b.querySelector('.c').textContent = c[b.dataset.filter]);
+  $('#viewTrack').querySelectorAll('.section[data-cat]').forEach(sec => {
+    const all = sel.filter(t => t.cat === sec.dataset.cat), done = all.filter(t => rec(t.id).status === 'done').length;
+    sec.querySelector('.mini > div').style.width = (all.length ? Math.round(done / all.length * 100) : 0) + '%';
+    sec.querySelector('.sec-head .n').textContent = `${done} of ${all.length} done`;
+  });
+}
+
+const trackEl = $('#viewTrack');
+function closeRowMenus() {
+  trackEl.querySelectorAll('.row-menu').forEach(m => m.remove());
+  trackEl.querySelectorAll('[data-more][aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+}
+trackEl.addEventListener('click', e => {
+  const f = e.target.closest('[data-filter]'); if (f) { filter = f.dataset.filter; renderTrack(); return; }
+  const g = e.target.closest('[data-group]'); if (g) { groupBy = g.dataset.group; renderTrack(); return; }
+  const more = e.target.closest('[data-more]');
+  if (more) {
+    const wasOpen = more.getAttribute('aria-expanded') === 'true';
+    closeRowMenus();
+    if (!wasOpen) {
+      more.setAttribute('aria-expanded', 'true');
+      more.insertAdjacentHTML('afterend', '<div class="menu row-menu"><button type="button" class="danger" data-remove>Remove from project</button></div>');
+      more.nextElementSibling.querySelector('button').focus();
+    }
+    return;
+  }
+  if (e.target.closest('[data-remove]')) {
+    const id = e.target.closest('.row').dataset.id, t = selectedTasks().find(x => x.id === id), cur = rec(id);
+    closeRowMenus();
+    if (hasData(cur) && !confirm(`Remove "${t.name}" from this project? Its status, date and notes are kept and come back if you check it again in Choose tasks.`)) return;
+    ensure(id).sel = false; changed(); renderTrack();
+    toast(`Removed "${t.name}". Check it again in Choose tasks to bring it back.`, 4000);
+  }
+});
+document.addEventListener('click', e => { if (!e.target.closest('.row-more')) closeRowMenus(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeRowMenus(); });
+trackEl.addEventListener('change', e => { if (e.target.dataset.k === 'who') updatePeopleList(); });
+trackEl.addEventListener('input', e => {
+  const k = e.target.dataset.k; if (!k) return;
+  const row = e.target.closest('.row'), r = ensure(row.dataset.id);
+  r[k] = e.target.value;
+  if (k === 'notes') grow(e.target);
+  if (k === 'status') {
+    row.className = 'row s-' + r.status;
+    e.target.className = 'f status st-' + r.status;
+  }
+  if (k === 'status' || k === 'due') {
+    const d = dueInfo(r), w = row.querySelector('.due-wrap');
+    w.className = 'due-wrap ' + d.cls; w.querySelector('.due-flag').textContent = d.label;
+    refreshTrackStats();
+  }
+  changed();
+});
+
+/* ---------- journal ---------- */
+let jDraft = '', jTag = JOURNAL_TAGS[0], jDate = '', jSearch = '', jFilter = 'all';
+let jEdit = null;   // the note being edited and its unsaved changes: { id, text, tag, date }
+const AUTHOR_KEY = 'pc:author';   // remembered per computer, not per project
+let authorMem = '';
+function getAuthor() { try { return localStorage.getItem(AUTHOR_KEY) || authorMem; } catch (e) { return authorMem; } }
+function setAuthor(v) { authorMem = v; try { localStorage.setItem(AUTHOR_KEY, v); } catch (e) {} }
+const AV_COLORS = ['#1f5fbf', '#1e7a46', '#a35d00', '#5b3fb5', '#b42318', '#0e7490', '#86198f', '#4d5d1f'];
+function avatar(name) {
+  const n = (name || '?').trim();
+  const ini = n.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
+  let h = 0; for (const ch of n.toLowerCase()) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `<div class="avatar" style="background:${AV_COLORS[h % AV_COLORS.length]}" aria-hidden="true">${esc(ini)}</div>`;
+}
+const linkify = s => esc(s).replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+const localDate = iso => { const d = new Date(iso); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const fmtTime = iso => new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+function dayLabel(iso) {
+  const n = daysUntil(iso);
+  if (n === 0) return 'Today';
+  if (n === -1) return 'Yesterday';
+  return new Date(iso + 'T00:00').toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+function whenLabel(j) {
+  if (localDate(j.created) === j.date) return fmtTime(j.created);
+  return 'posted ' + new Date(j.created).toLocaleDateString([], { month: 'short', day: 'numeric' }) + ', ' + fmtTime(j.created);
+}
+const tagOptions = sel => [...new Set([...JOURNAL_TAGS, sel])].map(t => `<option${t === sel ? ' selected' : ''}>${esc(t)}</option>`).join('');
+
+function entryHtml(j) {
+  const editing = !!jEdit && jEdit.id === j.id;
+  return `<article class="entry${j.pinned ? ' pinned' : ''}" data-jid="${esc(j.id)}">
+    ${avatar(j.author)}
+    <div>
+      <div class="e-head">
+        <span class="who">${esc(j.author || 'Unknown')}</span><span class="when">${whenLabel(j)}</span><span class="tag">${esc(j.tag)}</span>${j.edited ? '<span class="when">(edited)</span>' : ''}
+        <span class="e-actions">${editing ? '' : `<button type="button" data-jact="pin" class="${j.pinned ? 'pin-on' : ''}">${j.pinned ? 'Unpin' : 'Pin to top'}</button><button type="button" data-jact="edit">Edit</button><button type="button" data-jact="del" class="danger">Delete</button>`}</span>
+      </div>
+      ${editing ? `<div class="e-edit">
+        <textarea class="f" id="jEditText" aria-label="Edit note">${esc(jEdit.text)}</textarea>
+        <div class="row-btns"><select class="f" id="jEditTag" style="width:auto" aria-label="Label">${tagOptions(jEdit.tag)}</select>
+          <input class="f" type="date" id="jEditDate" value="${esc(jEdit.date)}" style="width:auto" aria-label="Date">
+          <span class="spacer"></span><button class="btn" type="button" data-jact="cancel">Cancel</button><button class="btn primary" type="button" data-jact="save">Save</button></div>
+      </div>` : `<div class="e-body">${linkify(j.text)}</div>`}
+    </div>
+  </article>`;
+}
+function renderJournal() {
+  const el = $('#viewJournal');
+  const q = jSearch.trim().toLowerCase();
+  const tagsUsed = [...new Set(state.journal.map(j => j.tag))].sort((a, b) => (JOURNAL_TAGS.indexOf(a) + 1 || 99) - (JOURNAL_TAGS.indexOf(b) + 1 || 99));
+  if (jFilter !== 'all' && !tagsUsed.includes(jFilter)) jFilter = 'all';
+  const list = state.journal
+    .filter(j => (jFilter === 'all' || j.tag === jFilter) && (!q || (j.text + ' ' + j.author + ' ' + j.tag).toLowerCase().includes(q)))
+    .sort((a, b) => a.date !== b.date ? (a.date < b.date ? 1 : -1) : (a.created < b.created ? 1 : -1));
+
+  let body = '';
+  const pinned = list.filter(j => j.pinned);
+  if (pinned.length) body += `<div class="day pinned-h">Pinned</div>` + pinned.map(entryHtml).join('');
+  let lastDay = null;
+  for (const j of list) {
+    if (j.pinned) continue;
+    if (j.date !== lastDay) { body += `<div class="day">${esc(dayLabel(j.date))}</div>`; lastDay = j.date; }
+    body += entryHtml(j);
+  }
+  if (!state.journal.length) body = `<div class="j-empty">No notes yet. Use the journal for anything the whole team should know: site access, client preferences, phone calls, field conditions, decisions made.</div>`;
+  else if (!list.length) body = `<div class="j-empty">No notes match.</div>`;
+
+  const seg = state.journal.length ? `<div class="toolbar" style="margin-bottom:0">
+      <input class="search" id="jSearch" type="search" placeholder="Search notes…" value="${esc(jSearch)}" aria-label="Search notes">
+      <div class="seg" role="group" aria-label="Filter by label">
+        <button type="button" data-jfilter="all" aria-pressed="${jFilter === 'all'}">All<span class="c">${state.journal.length}</span></button>
+        ${tagsUsed.map(t => `<button type="button" data-jfilter="${esc(t)}" aria-pressed="${jFilter === t}">${esc(t)}</button>`).join('')}
+      </div></div>` : '';
+
+  el.innerHTML = `<div class="journal">
+    <div class="compose">
+      <textarea id="jText" placeholder="Write a note for everyone on this project…   (Ctrl+Enter to post)" aria-label="New note">${esc(jDraft)}</textarea>
+      <div class="compose-foot">
+        <input class="f who-in" id="jAuthor" placeholder="Your name" value="${esc(getAuthor())}" aria-label="Your name" data-people autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false">
+        <select class="f" id="jTag" aria-label="Label">${tagOptions(jTag)}</select>
+        <input class="f" type="date" id="jDate" value="${esc(jDate || todayISO())}" aria-label="Date" title="Date this note is about">
+        <span class="spacer"></span>
+        <button class="btn primary" type="button" id="jPost">Post note</button>
+      </div>
+    </div>
+    ${seg}
+    ${body}
+  </div>`;
+  grow($('#jText'));
+  const et = $('#jEditText'); if (et) grow(et);
+  updatePeopleList();
+}
+function postEntry() {
+  const text = $('#jText').value.trim();
+  if (!text) { $('#jText').focus(); return; }
+  const author = $('#jAuthor').value.trim();
+  if (!author) { toast('Add your name so everyone knows who wrote it'); $('#jAuthor').focus(); return; }
+  setAuthor(author);
+  state.journal.push({
+    id: 'j-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    created: new Date().toISOString(), date: $('#jDate').value || todayISO(),
+    author, tag: $('#jTag').value, text, pinned: false, edited: null, m: Date.now(),
+  });
+  jDraft = ''; jDate = '';
+  changed(); renderJournal(); updateJournalCount();
+}
+function saveEdit() {
+  const j = jEdit && state.journal.find(x => x.id === jEdit.id); if (!j) return;
+  const text = jEdit.text.trim(); if (!text) { $('#jEditText').focus(); return; }
+  Object.assign(j, { text, tag: jEdit.tag, date: jEdit.date || j.date, edited: new Date().toISOString(), m: Date.now() });
+  jEdit = null; changed(); renderJournal();
+}
+function editDirty() {
+  if (!jEdit) return false;
+  const j = state.journal.find(x => x.id === jEdit.id);
+  return !!j && (jEdit.text !== j.text || jEdit.tag !== j.tag || jEdit.date !== j.date);
+}
+function updateJournalCount() { $('#journalCount').textContent = state.journal.length || ''; }
+
+const journalEl = $('#viewJournal');
+journalEl.addEventListener('click', e => {
+  if (e.target.closest('#jPost')) return postEntry();
+  const f = e.target.closest('[data-jfilter]'); if (f) { jFilter = f.dataset.jfilter; renderJournal(); return; }
+  const a = e.target.closest('[data-jact]'); if (!a) return;
+  const j = state.journal.find(x => x.id === a.closest('[data-jid]').dataset.jid); if (!j) return;
+  switch (a.dataset.jact) {
+    case 'pin': j.pinned = !j.pinned; j.m = Date.now(); changed(); renderJournal(); break;
+    case 'edit':
+      if (editDirty() && !confirm('You have unsaved changes to another note. Discard them?')) return;
+      jEdit = { id: j.id, text: j.text, tag: j.tag, date: j.date }; renderJournal(); $('#jEditText').focus(); break;
+    case 'cancel': jEdit = null; renderJournal(); break;
+    case 'save': saveEdit(); break;
+    case 'del':
+      if (!confirm(`Delete this note by ${j.author || 'Unknown'}? This can't be undone.`)) return;
+      state.journal = state.journal.filter(x => x.id !== j.id); state.deleted[j.id] = Date.now();
+      if (jEdit && jEdit.id === j.id) jEdit = null;
+      changed(); renderJournal(); updateJournalCount(); break;
+  }
+});
+journalEl.addEventListener('input', e => {
+  const t = e.target;
+  if (t.id === 'jText') { jDraft = t.value; grow(t); }
+  else if (t.id === 'jEditText') { jEdit.text = t.value; grow(t); }
+  else if (t.id === 'jSearch') { jSearch = t.value; renderJournal(); const n = $('#jSearch'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); }
+});
+journalEl.addEventListener('change', e => {
+  const t = e.target;
+  if (t.id === 'jAuthor') setAuthor(t.value.trim());
+  else if (t.id === 'jTag') jTag = t.value;
+  else if (t.id === 'jDate') jDate = t.value;
+  else if (t.id === 'jEditTag') jEdit.tag = t.value;
+  else if (t.id === 'jEditDate') jEdit.date = t.value;
+});
+journalEl.addEventListener('keydown', e => {
+  if (!(e.key === 'Enter' && (e.ctrlKey || e.metaKey))) return;
+  if (e.target.id === 'jText') { e.preventDefault(); postEntry(); }
+  else if (e.target.id === 'jEditText') { e.preventDefault(); saveEdit(); }
+});
+
+/* ---------- views ---------- */
+function setView(v, opts = {}) {
+  view = v;
+  [['tabChoose', 'choose'], ['tabTrack', 'track'], ['tabJournal', 'journal']].forEach(([id, name]) => $('#' + id).setAttribute('aria-selected', v === name));
+  $('#viewChoose').hidden = v !== 'choose';
+  $('#viewTrack').hidden = v !== 'track';
+  $('#viewJournal').hidden = v !== 'journal';
+  if (v === 'choose') renderChoose(); else if (v === 'track') renderTrack(); else renderJournal();
+  if (!opts.keepScroll) window.scrollTo({ top: 0 });
+}
+function renderAll(opts = {}) {
+  renderProject(); renderSave(); renderBanner(); updateJournalCount();
+  setView(view || (selectedTasks().length ? 'track' : 'choose'), opts);
+}
+$('#tabChoose').onclick = () => setView('choose');
+$('#tabTrack').onclick = () => setView('track');
+$('#tabJournal').onclick = () => setView('journal');
+
+/* ---------- project fields ---------- */
+[['projName', 'name'], ['projNumber', 'number'], ['projClient', 'client'], ['projPm', 'pm']].forEach(([id, k]) => {
+  $('#' + id).addEventListener('input', e => {
+    state.project[k] = e.target.value; state.project.mf[k] = Date.now();
+    if (k === 'name') rememberProject();
+    if (k === 'name') document.title = (e.target.value ? e.target.value + ' – ' : '') + 'Project Checklist';
+    changed();
+  });
+});
+
+/* ---------- dialogs, menu, misc ---------- */
+const connectDlg = $('#connectDlg');
+function openConnect() {
+  if (!FSA) { $('#helpDlg').showModal(); return; }
+  $('#localPathBox').hidden = HOSTED;
+  $('#hostedPathNote').hidden = !HOSTED;
+  $('#dlgProjectId').textContent = PROJECT_ID || state.project.number || 'this project';
+  $('#folderPath').textContent = pageFolder() || '(this page\'s folder)';
+  connectDlg.showModal();
+}
+function closeDlg() { if (connectDlg.open) connectDlg.close(); }
+$('#dlgFolder').onclick = connectFolder;
+$('#copyPath').onclick = async e => {
+  const b = e.currentTarget;
+  b.textContent = (await copyText(pageFolder())) ? 'Copied ✓' : 'Could not copy. Select the path above instead';
+  setTimeout(() => { b.textContent = 'Copy to clipboard'; }, 2000);
+};
+$('#dlgOpen').onclick = connectOpen;
+$('#dlgCancel').onclick = closeDlg;
+$('#helpClose').onclick = () => $('#helpDlg').close();
+
+$('#saveBtn').onclick = () => {
+  if (!FSA) return $('#helpDlg').showModal();
+  if (saveError && linked) return writeFile();
+  if (handle && !linked) return reconnect();
+  if (!handle) return openConnect();
+};
+
+const menu = $('#menu'), menuBtn = $('#menuBtn');
+menuBtn.onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; menuBtn.setAttribute('aria-expanded', !menu.hidden); };
+document.addEventListener('click', e => { if (!menu.hidden && !menu.contains(e.target)) { menu.hidden = true; menuBtn.setAttribute('aria-expanded', 'false'); } });
+menu.addEventListener('click', e => {
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  menu.hidden = true;
+  ({ copylink: async () => toast((await copyText(projectUrl(PROJECT_ID))) ? 'Link copied' : 'Could not copy the link'),
+     connect: openConnect, export: exportJson, import: () => pickImport('full'), template: () => pickImport('template'), help: () => $('#helpDlg').showModal() })[a.dataset.act]();
+});
+
+const printMenu = $('#printMenu'), printBtn = $('#printBtn');
+printBtn.onclick = e => { e.stopPropagation(); printMenu.hidden = !printMenu.hidden; printBtn.setAttribute('aria-expanded', !printMenu.hidden); };
+document.addEventListener('click', e => { if (!printMenu.hidden && !printMenu.contains(e.target)) { printMenu.hidden = true; printBtn.setAttribute('aria-expanded', 'false'); } });
+let printWhat = null;
+printMenu.addEventListener('click', e => {
+  const b = e.target.closest('[data-print]'); if (!b) return;
+  printMenu.hidden = true; printBtn.setAttribute('aria-expanded', 'false');
+  printWhat = b.dataset.print; window.print(); printWhat = null;
+});
+// Print always shows everything: the full task list, or the whole journal. Ctrl+P prints whichever matches the current tab.
+let beforePrint = null;
+window.addEventListener('beforeprint', () => {
+  beforePrint = { view, filter, person, jSearch, jFilter };
+  const what = printWhat || (view === 'journal' ? 'journal' : 'tasks');
+  if (what === 'journal') { jSearch = ''; jFilter = 'all'; setView('journal', { keepScroll: true }); }
+  else { filter = 'all'; person = PERSON_ALL; setView('track', { keepScroll: true }); }
+});
+window.addEventListener('afterprint', () => {
+  if (!beforePrint) return;
+  ({ filter, person, jSearch, jFilter } = beforePrint);
+  setView(beforePrint.view, { keepScroll: true }); beforePrint = null;
+});
+
+window.addEventListener('beforeunload', e => {
+  if (linked && (saving || pending)) { writeFile(); e.preventDefault(); e.returnValue = ''; }
+});
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+    e.preventDefault();
+    if (linked) { clearTimeout(saveTimer); writeFile().then(() => { if (!saveError) toast('Saved'); }); } else if (handle) reconnect(); else openConnect();
+  }
+});
+
+let toastTimer;
+function toast(msg, ms = 2600) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms); }
+
+/* ---------- boot ---------- */
+(async function boot() {
+  if (HOSTED) {
+    $('#homeLink').hidden = false; $('#appName').hidden = true;
+    $('#copyLinkItem').hidden = !PROJECT_ID;
+    $('#helpNewLocal').hidden = true; $('#helpNewHosted').hidden = false;
+  }
+  if (SHOW_HOME) { renderHome(); return; }
+  state = loadLocal() || blankState();
+  if (FSA) {
+    try {
+      const h = await idbGet(PAGE_KEY);
+      if (h) {
+        handle = h;
+        let perm = await h.queryPermission({ mode: 'readwrite' });
+        // If "Allow on every visit" was chosen, the browser may grant this without a click.
+        // If it insists on a click, this fails quietly and the Reconnect bar shows as usual.
+        if (perm !== 'granted') {
+          try { perm = await h.requestPermission({ mode: 'readwrite' }); } catch (e) { /* needs a click */ }
+        }
+        if (perm === 'granted') {
+          try { await useHandle(h, { preferFile: false }); rememberProject(); return; } catch (e) { linked = false; }
+        }
+      }
+    } catch (e) { /* no stored handle */ }
+  }
+  renderAll();
+  rememberProject();
+})();
+})();
+</script>
+</body>
+</html>
