@@ -363,7 +363,7 @@ body.home header { display: none; }
 <header>
   <div class="wrap">
     <div class="head-top">
-      <a class="eyebrow home-link" id="homeLink" href="?" hidden>‹ All projects</a>
+      <a class="eyebrow home-link" id="homeLink" href="./" hidden>‹ All projects</a>
       <span class="eyebrow" id="appName">Project Checklist</span>
       <span class="spacer"></span>
       <button class="save" id="saveBtn" type="button"><span class="dot"></span><span id="saveText">Loading…</span></button>
@@ -465,13 +465,19 @@ const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const slug = s => s.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const FSA = 'showSaveFilePicker' in window;
-// Hosted: one page serves every project, told apart by ?project=<number> in the link.
+// Hosted: one page serves every project, told apart by #project=<number> in the link.
+// The part after # never leaves the browser, so project numbers aren't sent to the web host.
 // Opened as a local file: each copy of the file is its own project, as in earlier versions.
 const HOSTED = location.protocol === 'http:' || location.protocol === 'https:';
-const PROJECT_ID = (new URLSearchParams(location.search).get('project') || '').trim();
+const LEGACY_ID = HOSTED ? (new URLSearchParams(location.search).get('project') || '').trim() : '';   // old ?project= links
+const PROJECT_ID = (new URLSearchParams(location.hash.slice(1)).get('project') || '').trim() || LEGACY_ID;
 const SHOW_HOME = HOSTED && !PROJECT_ID;
 const PAGE_KEY = PROJECT_ID ? 'pc:project:' + PROJECT_ID.toLowerCase() : 'pc:' + decodeURIComponent(location.pathname || location.href);
-const projectUrl = id => location.origin + location.pathname + '?project=' + encodeURIComponent(id);
+const projectUrl = id => location.origin + location.pathname + '#project=' + encodeURIComponent(id);
+// Tidy an old ?project= link into the # form (no reload), and reload when the # part changes
+// (e.g. opening a project from the home page), since the whole page is set up for one project.
+if (LEGACY_ID) history.replaceState(null, '', projectUrl(LEGACY_ID));
+if (HOSTED) addEventListener('hashchange', () => location.reload());
 const STATUS_IDS = STATUSES.map(s => s.id);
 
 const CATS = LIBRARY.map(c => ({
